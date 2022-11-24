@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { Unity, useUnityContext } from "react-unity-webgl";
 import styles from "./app.module.css";
-import { ethos, EthosConnectProvider  } from 'ethos-connect'
+import { ethos, EthosConnectProvider, EthosConnectStatus, ProviderAndSigner  } from 'ethos-connect'
+import { Stats } from "fs";
 
 const App = () => {
   const {
@@ -15,10 +16,10 @@ const App = () => {
     takeScreenshot,
     unload,
   } = useUnityContext({
-    loaderUrl: "/unitybuild/crateclicker.loader.js",
-    dataUrl: "/unitybuild/crateclicker.data",
-    frameworkUrl: "/unitybuild/crateclicker.framework.js",
-    codeUrl: "/unitybuild/crateclicker.wasm",
+    loaderUrl: "/unitybuild/unitybuild.loader.js",
+    dataUrl: "/unitybuild/unitybuild.data",
+    frameworkUrl: "/unitybuild/unitybuild.framework.js",
+    codeUrl: "/unitybuild/unitybuild.wasm",
     webglContextAttributes: {
       preserveDrawingBuffer: true,
     },
@@ -74,6 +75,24 @@ const App = () => {
     [scores]
   );
 
+  const handleConnectWallet = useCallback(
+    () => {
+      ethos.showSignInModal();
+    },
+    []
+  );
+
+  const handleDisconnectWallet = useCallback(
+    () => {
+      const { status, wallet } = ethos.useWallet();
+      if (status === EthosConnectStatus.Connected) {
+        wallet?.disconnect();
+        sendMessage("WalletConnector", "InvokeOnWalletDisconnected");
+      }
+    },
+    []
+  );
+
   useEffect(() => {
     addEventListener("GameOver", handleGameOver);
     return () => {
@@ -81,10 +100,28 @@ const App = () => {
     };
   }, [handleGameOver, addEventListener, removeEventListener]);
 
+  useEffect(() => {
+    addEventListener("ConnectWallet", handleConnectWallet);
+    return () => {
+      removeEventListener("ConnectWallet", handleConnectWallet);
+    };
+  }, [handleConnectWallet, addEventListener, removeEventListener]);
+
+  useEffect(() => {
+    addEventListener("DisconnectWallet", handleDisconnectWallet);
+    return () => {
+      removeEventListener("DisconnectWallet", handleDisconnectWallet);
+    };
+  }, [handleDisconnectWallet, addEventListener, removeEventListener]);
+
   return (
     <EthosConnectProvider
       ethosConfiguration={{
-        hideEmailSignIn: true // defaults to false
+        hideEmailSignIn: true             
+      }} onWalletConnected={async ({provider, signer }: ProviderAndSigner) => {
+        let address = await signer?.getAddress();
+        console.log("onwalletconnected. " + address);
+        sendMessage("WalletConnector", "InvokeOnWalletConnected", address);
       }}
     >
       <div className={styles.container}>
@@ -113,7 +150,8 @@ const App = () => {
           <button onClick={handleClickFullscreen}>Fullscreen</button>
           <button onClick={handleClickScreenshot}>Screenshot</button>
           <button onClick={handleClickUnload}>Unload</button>
-          <button onClick={ethos.showSignInModal}>Show sign in</button>
+          {/* <button onClick={ethos.showSignInModal}>Show sign in</button> */}
+          <ethos.components.AddressWidget />
         </div>
         <h2>Scores</h2>
         <ul>
