@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Unity, useUnityContext } from "react-unity-webgl";
 import styles from "./app.module.css";
+import { ethos, EthosConnectProvider  } from 'ethos-connect'
 
 const App = () => {
   const {
@@ -81,48 +82,55 @@ const App = () => {
   }, [handleGameOver, addEventListener, removeEventListener]);
 
   return (
-    <div className={styles.container}>
-      <h1>Crate Clicker!</h1>
-      <div className={styles.unityWrapper}>
-        {isLoaded === false && (
-          <div className={styles.loadingBar}>
-            <div
-              className={styles.loadingBarFill}
-              style={{ width: loadingProgression * 100 }}
-            />
-          </div>
-        )}
-        <Unity
-          unityProvider={unityProvider}
-          style={{ display: isLoaded ? "block" : "none" }}
-        />
+    <EthosConnectProvider
+      ethosConfiguration={{
+        hideEmailSignIn: true // defaults to false
+      }}
+    >
+      <div className={styles.container}>
+        <h1>Crate Clicker!</h1>
+        <div className={styles.unityWrapper}>
+          {isLoaded === false && (
+            <div className={styles.loadingBar}>
+              <div
+                className={styles.loadingBarFill}
+                style={{ width: loadingProgression * 100 }}
+              />
+            </div>
+          )}
+          <Unity
+            unityProvider={unityProvider}
+            style={{ display: isLoaded ? "block" : "none" }}
+          />
+        </div>
+        <div className="buttons">
+          <button onClick={() => handleClickStartGame(5)}>
+            Start Short Game
+          </button>
+          <button onClick={() => handleClickStartGame(10)}>
+            Start Long Game
+          </button>
+          <button onClick={handleClickFullscreen}>Fullscreen</button>
+          <button onClick={handleClickScreenshot}>Screenshot</button>
+          <button onClick={handleClickUnload}>Unload</button>
+          <button onClick={ethos.showSignInModal}>Show sign in</button>
+        </div>
+        <h2>Scores</h2>
+        <ul>
+          {scores.map(([time, score]) => (
+            <li key={time}>
+              {score} points with {time} seconds left!
+            </li>
+          ))}
+        </ul>
+        <h2>Screenshots</h2>
+        <div className={styles.screenshots}>
+          {screenshotDatas.map((data, index) => (
+            <img width={250} key={index} src={data} alt="Screenshot" />
+          ))}
+        </div>
       </div>
-      <div className="buttons">
-        <button onClick={() => handleClickStartGame(5)}>
-          Start Short Game
-        </button>
-        <button onClick={() => handleClickStartGame(10)}>
-          Start Long Game
-        </button>
-        <button onClick={handleClickFullscreen}>Fullscreen</button>
-        <button onClick={handleClickScreenshot}>Screenshot</button>
-        <button onClick={handleClickUnload}>Unload</button>
-      </div>
-      <h2>Scores</h2>
-      <ul>
-        {scores.map(([time, score]) => (
-          <li key={time}>
-            {score} points with {time} seconds left!
-          </li>
-        ))}
-      </ul>
-      <h2>Screenshots</h2>
-      <div className={styles.screenshots}>
-        {screenshotDatas.map((data, index) => (
-          <img width={250} key={index} src={data} alt="Screenshot" />
-        ))}
-      </div>
-    </div>
+    </EthosConnectProvider>
   );
 };
 
