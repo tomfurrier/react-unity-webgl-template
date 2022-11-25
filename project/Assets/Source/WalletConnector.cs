@@ -12,6 +12,9 @@ public class WalletConnector : MonoBehaviour
     [DllImport ("__Internal")]
     static extern void DisconnectWallet();
 
+	[DllImport ("__Internal")]
+ 	static extern void GetConnectedWalletAddress();
+
     public void ConnectWallet_Istance()
     {
         ConnectWallet();
@@ -20,6 +23,11 @@ public class WalletConnector : MonoBehaviour
     public void DisconnectWallet_Istance()
     {
         DisconnectWallet();
+    }
+
+	public void GetConnectedWalletAddress_Istance()
+    {
+		GetConnectedWalletAddress();
     }
     
     // WebGL -> Unity
@@ -47,5 +55,10 @@ public class WalletConnector : MonoBehaviour
         {
             OnWalletDisconnected();
         }
+    }
+
+ 	public void InvokeOnConnectedWalletAddressReturned(string address)
+    {
+        Debug.Log("InvokeOnConnectedWalletAddressReturned. " + address);
     }
 }

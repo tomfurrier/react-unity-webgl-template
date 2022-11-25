@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { Unity, useUnityContext } from "react-unity-webgl";
 import styles from "./app.module.css";
-import { ethos, EthosConnectProvider, EthosConnectStatus, ProviderAndSigner  } from 'ethos-connect'
-import { Stats } from "fs";
+import { ethos, EthosConnectProvider, EthosConnectStatus, ProviderAndSigner,  } from 'ethos-connect'
 
 const App = () => {
   const {
@@ -24,6 +23,9 @@ const App = () => {
       preserveDrawingBuffer: true,
     },
   });
+
+  const walletContextContent = ethos.useWallet();
+
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [screenshotDatas, setScreenshotDatas] = useState<string[]>([]);
@@ -82,16 +84,51 @@ const App = () => {
     []
   );
 
-  const handleDisconnectWallet = useCallback(
+  const handleSendWalletAddress = useCallback(
     () => {
-      const { status, wallet } = ethos.useWallet();
-      if (status === EthosConnectStatus.Connected) {
-        wallet?.disconnect();
-        sendMessage("WalletConnector", "InvokeOnWalletDisconnected");
+      const address = walletContextContent.wallet?.address;
+      console.log("handleSendWalletAddress: " + address);
+
+      if (address !== undefined) {
+        sendMessage("WalletConnector", "InvokeOnConnectedWalletAddressReturned", address);
       }
     },
-    []
+    [walletContextContent]
   );
+
+  const handleDisconnectWallet = useCallback(
+    () => {
+      console.log("handleDisconnectWallet: " + walletContextContent.status);
+      walletContextContent.wallet?.disconnect();
+    },
+    [walletContextContent]
+  );
+
+  const handleGetConnectedWalletAddress = useCallback(
+    () => {
+      const address = walletContextContent.wallet?.address;
+      console.log("handleGetConnectedWalletAddress: " + address);
+
+      if (address !== undefined) {
+        sendMessage("WalletConnector", "InvokeOnConnectedWalletAddressReturned", address);
+      }
+    },
+    [walletContextContent, sendMessage]
+  );
+
+  useEffect(
+    () => { 
+      let address = walletContextContent.wallet?.address;
+      console.log("handleUnityLoaded: " + isLoaded + ", walletContextContent.status : " + walletContextContent.status + ", address: " + address);
+      if (isLoaded === false) {
+        return;
+      }
+      if (address !== undefined) {
+        console.log("calling InvokeOnWalletConnected.");
+        sendMessage("WalletConnector", "InvokeOnWalletConnected", walletContextContent.wallet?.address);
+      }
+    }, [isLoaded, sendMessage, walletContextContent ]
+  )
 
   useEffect(() => {
     addEventListener("GameOver", handleGameOver);
@@ -114,14 +151,33 @@ const App = () => {
     };
   }, [handleDisconnectWallet, addEventListener, removeEventListener]);
 
+  useEffect(() => {
+    addEventListener("GetConnectedWalletAddress", handleGetConnectedWalletAddress);
+    return () => {
+      removeEventListener("GetConnectedWalletAddress", handleGetConnectedWalletAddress);
+    };
+  }, [walletContextContent, handleGetConnectedWalletAddress, addEventListener, removeEventListener]);
+
+
   return (
     <EthosConnectProvider
       ethosConfiguration={{
         hideEmailSignIn: true             
       }} onWalletConnected={async ({provider, signer }: ProviderAndSigner) => {
         let address = await signer?.getAddress();
-        console.log("onwalletconnected. " + address);
-        sendMessage("WalletConnector", "InvokeOnWalletConnected", address);
+        console.log("onwalletconnected: " + address);        
+
+        if (isLoaded) {
+          if (address !== undefined)
+          {
+            sendMessage("WalletConnector", "InvokeOnWalletConnected", address);
+
+          }
+          else
+          {
+            sendMessage("WalletConnector", "InvokeOnWalletDisconnected");
+          }
+        }
       }}
     >
       <div className={styles.container}>
@@ -150,6 +206,7 @@ const App = () => {
           <button onClick={handleClickFullscreen}>Fullscreen</button>
           <button onClick={handleClickScreenshot}>Screenshot</button>
           <button onClick={handleClickUnload}>Unload</button>
+          <button onClick={handleSendWalletAddress}>SendWalletAddress</button>
           {/* <button onClick={ethos.showSignInModal}>Show sign in</button> */}
           <ethos.components.AddressWidget />
         </div>
