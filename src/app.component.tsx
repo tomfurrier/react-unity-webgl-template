@@ -1,7 +1,7 @@
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Unity, useUnityContext } from "react-unity-webgl";
 import styles from "./app.module.css";
-import { ethos, EthosConnectProvider, EthosConnectStatus, ProviderAndSigner,  } from 'ethos-connect'
+import { ethos, EthosConnectProvider, ProviderAndSigner,  } from 'ethos-connect'
 
 const App = () => {
   const {
@@ -84,18 +84,6 @@ const App = () => {
     []
   );
 
-  const handleSendWalletAddress = useCallback(
-    () => {
-      const address = walletContextContent.wallet?.address;
-      console.log("handleSendWalletAddress: " + address);
-
-      if (address !== undefined) {
-        sendMessage("WalletConnector", "InvokeOnConnectedWalletAddressReturned", address);
-      }
-    },
-    [walletContextContent, sendMessage]
-  );
-
   const handleDisconnectWallet = useCallback(
     () => {
       console.log("handleDisconnectWallet: " + walletContextContent.status);
@@ -104,13 +92,10 @@ const App = () => {
     [walletContextContent]
   );
 
-  const handleGetConnectedWalletAddress = useCallback(
+  const handleReturnConnectedWalletAddress = useCallback(
     () => {
-      //const address = walletContextContent.wallet?.address;
-      console.log("handleGetConnectedWalletAddress: " + walletAddress);
-
       if (walletAddress !== undefined) {
-        sendMessage("WalletConnector", "InvokeOnConnectedWalletAddressReturned", walletAddress);
+        sendMessage("WalletConnector", "InvokeReturnConnectedWalletAddress", walletAddress);
       }
     },
     [walletAddress, sendMessage]
@@ -152,12 +137,11 @@ const App = () => {
   }, [handleDisconnectWallet, addEventListener, removeEventListener]);
 
   useEffect(() => {
-    addEventListener("GetConnectedWalletAddress", handleGetConnectedWalletAddress);
+    addEventListener("RequestConnectedWalletAddress", handleReturnConnectedWalletAddress);
     return () => {
-      removeEventListener("GetConnectedWalletAddress", handleGetConnectedWalletAddress);
+      removeEventListener("RequestConnectedWalletAddress", handleReturnConnectedWalletAddress);
     };
-  }, [walletContextContent, handleGetConnectedWalletAddress, addEventListener, removeEventListener]);
-
+  }, [handleReturnConnectedWalletAddress, addEventListener, removeEventListener]);
 
   return (
     <EthosConnectProvider
@@ -166,13 +150,11 @@ const App = () => {
       }} onWalletConnected={async ({provider, signer }: ProviderAndSigner) => {
         let address = await signer?.getAddress();
         setWalletAddress(address);
-        console.log("onwalletconnected: " + address);        
 
         if (isLoaded) {
           if (address !== undefined)
           {
             sendMessage("WalletConnector", "InvokeOnWalletConnected", address);
-
           }
           else
           {
@@ -207,7 +189,6 @@ const App = () => {
           <button onClick={handleClickFullscreen}>Fullscreen</button>
           <button onClick={handleClickScreenshot}>Screenshot</button>
           <button onClick={handleClickUnload}>Unload</button>
-          <button onClick={handleSendWalletAddress}>SendWalletAddress</button>
           {/* <button onClick={ethos.showSignInModal}>Show sign in</button> */}
           <ethos.components.AddressWidget />
         </div>

@@ -8,7 +8,7 @@
   DisconnectWallet: function () {
     dispatchReactUnityEvent("DisconnectWallet");
   },
-  GetConnectedWalletAddress: function () {
-    dispatchReactUnityEvent("GetConnectedWalletAddress");
+  RequestConnectedWalletAddress: function () {
+    dispatchReactUnityEvent("RequestConnectedWalletAddress");
   }
 });

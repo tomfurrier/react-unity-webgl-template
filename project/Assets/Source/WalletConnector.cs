@@ -13,32 +13,42 @@ public class WalletConnector : MonoBehaviour
     static extern void DisconnectWallet();
 
 	[DllImport ("__Internal")]
- 	static extern void GetConnectedWalletAddress();
+ 	static extern void RequestConnectedWalletAddress();
 
     public void ConnectWallet_Istance()
     {
+#if UNITY_WEBGL && !UNITY_EDITOR
         ConnectWallet();
+#endif
     }
     
     public void DisconnectWallet_Istance()
     {
+#if UNITY_WEBGL && !UNITY_EDITOR
         DisconnectWallet();
+#endif
     }
 
 	public void GetConnectedWalletAddress_Istance()
     {
-		GetConnectedWalletAddress();
+#if UNITY_WEBGL && !UNITY_EDITOR
+		RequestConnectedWalletAddress();
+#endif
     }
-    
+
     // WebGL -> Unity
-    
+
     // Will be called after Unity is loaded if wallet is connected already.
     public delegate void WalletConnectedAction(string address);
     public static event WalletConnectedAction OnWalletConnected;
     
     public delegate void WalletDisconnectedAction();
     public static event WalletDisconnectedAction OnWalletDisconnected;
-    
+
+    public delegate void ReturnConnectedWalletAddressAction(string addres);
+    public static event ReturnConnectedWalletAddressAction OnConnectedWalletAddressReturned;
+
+
     public void InvokeOnWalletConnected(string address)
     {
         Debug.Log("Wallet connected: " + address);
@@ -57,8 +67,12 @@ public class WalletConnector : MonoBehaviour
         }
     }
 
- 	public void InvokeOnConnectedWalletAddressReturned(string address)
+ 	public void InvokeReturnConnectedWalletAddress(string address)
     {
-        Debug.Log("InvokeOnConnectedWalletAddressReturned. " + address);
+        Debug.Log("InvokeReturnConnectedWalletAddress. " + address);
+        if (OnConnectedWalletAddressReturned != null)
+        {
+            OnConnectedWalletAddressReturned(address);
+        }
     }
 }
