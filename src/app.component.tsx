@@ -92,7 +92,6 @@ const App = () => {
       }}
     >
       <div className={styles.container}>
-        <h1> Wallet Connector Sample!</h1>
         <div className={styles.unityWrapper}>
           {isLoaded === false && (
             <div className={styles.loadingBar}>
@@ -107,7 +106,7 @@ const App = () => {
             style={{ display: isLoaded ? "block" : "none" }}
           />
         </div>
-        <div className="buttons">
+        <div className="topright">
           <ethos.components.AddressWidget />
         </div>
       </div>

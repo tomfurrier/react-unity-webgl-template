@@ -1,6 +1,6 @@
 body {
   background-color: #ffffff;
-  margin: 40px;
+  margin: 0px;
 }
 
 body * {
@@ -18,4 +18,10 @@ body button {
 }
 body button:hover {
   background-color: #cccccc;
+}
+
+.topright {
+  position: absolute;
+  top: 0px;
+  right: 0px;
 }
