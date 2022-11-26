@@ -25,7 +25,7 @@ const App = () => {
   });
 
   const walletContextContent = ethos.useWallet();
-
+  const [walletAddress, setWalletAddress] = useState<string | undefined>();
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [screenshotDatas, setScreenshotDatas] = useState<string[]>([]);
@@ -93,7 +93,7 @@ const App = () => {
         sendMessage("WalletConnector", "InvokeOnConnectedWalletAddressReturned", address);
       }
     },
-    [walletContextContent]
+    [walletContextContent, sendMessage]
   );
 
   const handleDisconnectWallet = useCallback(
@@ -106,14 +106,14 @@ const App = () => {
 
   const handleGetConnectedWalletAddress = useCallback(
     () => {
-      const address = walletContextContent.wallet?.address;
-      console.log("handleGetConnectedWalletAddress: " + address);
+      //const address = walletContextContent.wallet?.address;
+      console.log("handleGetConnectedWalletAddress: " + walletAddress);
 
-      if (address !== undefined) {
-        sendMessage("WalletConnector", "InvokeOnConnectedWalletAddressReturned", address);
+      if (walletAddress !== undefined) {
+        sendMessage("WalletConnector", "InvokeOnConnectedWalletAddressReturned", walletAddress);
       }
     },
-    [walletContextContent, sendMessage]
+    [walletAddress, sendMessage]
   );
 
   useEffect(
@@ -165,6 +165,7 @@ const App = () => {
         hideEmailSignIn: true             
       }} onWalletConnected={async ({provider, signer }: ProviderAndSigner) => {
         let address = await signer?.getAddress();
+        setWalletAddress(address);
         console.log("onwalletconnected: " + address);        
 
         if (isLoaded) {
