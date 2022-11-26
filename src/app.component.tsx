@@ -11,9 +11,6 @@ const App = () => {
     sendMessage,
     addEventListener,
     removeEventListener,
-    requestFullscreen,
-    takeScreenshot,
-    unload,
   } = useUnityContext({
     loaderUrl: "/unitybuild/unitybuild.loader.js",
     dataUrl: "/unitybuild/unitybuild.data",
@@ -27,56 +24,6 @@ const App = () => {
   const walletContextContent = ethos.useWallet();
   const [walletAddress, setWalletAddress] = useState<string | undefined>();
 
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [screenshotDatas, setScreenshotDatas] = useState<string[]>([]);
-  const [scores, setScores] = useState<[number, number][]>([]);
-
-  const handleClickStartGame = (time: number) => {
-    if (isLoaded === false || isPlaying === true) {
-      return;
-    }
-    setIsPlaying(true);
-    sendMessage("GameController", "StartGame", time);
-  };
-
-  const handleClickFullscreen = () => {
-    if (isLoaded === false) {
-      return;
-    }
-    requestFullscreen(true);
-  };
-
-  const handleClickScreenshot = () => {
-    if (isLoaded === false) {
-      return;
-    }
-    const screenshotData = takeScreenshot();
-    if (screenshotData !== undefined) {
-      setScreenshotDatas([screenshotData, ...screenshotDatas]);
-    }
-  };
-
-  const handleClickUnload = async () => {
-    if (isLoaded === false) {
-      return;
-    }
-    try {
-      await unload();
-      console.log("Unload success");
-    } catch (error) {
-      console.error(`Unable to unload: ${error}`);
-    }
-  };
-
-  const handleGameOver = useCallback(
-    (time: number, score: number) => {
-      time = Math.round(time);
-      setIsPlaying(false);
-      setScores([[time, score], ...scores]);
-    },
-    [scores]
-  );
-
   const handleConnectWallet = useCallback(
     () => {
       ethos.showSignInModal();
@@ -86,41 +33,27 @@ const App = () => {
 
   const handleDisconnectWallet = useCallback(
     () => {
-      console.log("handleDisconnectWallet: " + walletContextContent.status);
       walletContextContent.wallet?.disconnect();
     },
     [walletContextContent]
   );
 
-  const handleReturnConnectedWalletAddress = useCallback(
+  const handleRequestWalletAddress = useCallback(
     () => {
-      if (walletAddress !== undefined) {
-        sendMessage("WalletConnector", "InvokeReturnConnectedWalletAddress", walletAddress);
-      }
+        let address = walletAddress ?? "";
+        sendMessage("WalletConnector", "ReturnWalletAddress", address);
     },
     [walletAddress, sendMessage]
   );
 
   useEffect(
     () => { 
-      let address = walletContextContent.wallet?.address;
-      console.log("handleUnityLoaded: " + isLoaded + ", walletContextContent.status : " + walletContextContent.status + ", address: " + address);
-      if (isLoaded === false) {
+      if (isLoaded === false || walletAddress === undefined) {
         return;
       }
-      if (address !== undefined) {
-        console.log("calling InvokeOnWalletConnected.");
-        sendMessage("WalletConnector", "InvokeOnWalletConnected", walletContextContent.wallet?.address);
-      }
-    }, [isLoaded, sendMessage, walletContextContent ]
+      sendMessage("WalletConnector", "InvokeOnWalletConnected", walletAddress);
+    }, [isLoaded, sendMessage, walletAddress ]
   )
-
-  useEffect(() => {
-    addEventListener("GameOver", handleGameOver);
-    return () => {
-      removeEventListener("GameOver", handleGameOver);
-    };
-  }, [handleGameOver, addEventListener, removeEventListener]);
 
   useEffect(() => {
     addEventListener("ConnectWallet", handleConnectWallet);
@@ -137,34 +70,29 @@ const App = () => {
   }, [handleDisconnectWallet, addEventListener, removeEventListener]);
 
   useEffect(() => {
-    addEventListener("RequestConnectedWalletAddress", handleReturnConnectedWalletAddress);
+    addEventListener("RequestWalletAddress", handleRequestWalletAddress);
     return () => {
-      removeEventListener("RequestConnectedWalletAddress", handleReturnConnectedWalletAddress);
+      removeEventListener("RequestWalletAddress", handleRequestWalletAddress);
     };
-  }, [handleReturnConnectedWalletAddress, addEventListener, removeEventListener]);
+  }, [handleRequestWalletAddress, addEventListener, removeEventListener]);
 
   return (
     <EthosConnectProvider
       ethosConfiguration={{
         hideEmailSignIn: true             
       }} onWalletConnected={async ({provider, signer }: ProviderAndSigner) => {
+        
         let address = await signer?.getAddress();
         setWalletAddress(address);
 
-        if (isLoaded) {
-          if (address !== undefined)
-          {
-            sendMessage("WalletConnector", "InvokeOnWalletConnected", address);
-          }
-          else
-          {
-            sendMessage("WalletConnector", "InvokeOnWalletDisconnected");
-          }
+        if (address === undefined)
+        {
+          sendMessage("WalletConnector", "InvokeOnWalletDisconnected");
         }
       }}
     >
       <div className={styles.container}>
-        <h1>Crate Clicker!</h1>
+        <h1> Wallet Connector Sample!</h1>
         <div className={styles.unityWrapper}>
           {isLoaded === false && (
             <div className={styles.loadingBar}>
@@ -180,31 +108,7 @@ const App = () => {
           />
         </div>
         <div className="buttons">
-          <button onClick={() => handleClickStartGame(5)}>
-            Start Short Game
-          </button>
-          <button onClick={() => handleClickStartGame(10)}>
-            Start Long Game
-          </button>
-          <button onClick={handleClickFullscreen}>Fullscreen</button>
-          <button onClick={handleClickScreenshot}>Screenshot</button>
-          <button onClick={handleClickUnload}>Unload</button>
-          {/* <button onClick={ethos.showSignInModal}>Show sign in</button> */}
           <ethos.components.AddressWidget />
-        </div>
-        <h2>Scores</h2>
-        <ul>
-          {scores.map(([time, score]) => (
-            <li key={time}>
-              {score} points with {time} seconds left!
-            </li>
-          ))}
-        </ul>
-        <h2>Screenshots</h2>
-        <div className={styles.screenshots}>
-          {screenshotDatas.map((data, index) => (
-            <img width={250} key={index} src={data} alt="Screenshot" />
-          ))}
         </div>
       </div>
     </EthosConnectProvider>

@@ -13,26 +13,26 @@ public class WalletConnector : MonoBehaviour
     static extern void DisconnectWallet();
 
 	[DllImport ("__Internal")]
- 	static extern void RequestConnectedWalletAddress();
+ 	static extern void RequestWalletAddress();
 
-    public void ConnectWallet_Istance()
+    public void ConnectWallet_Instance()
     {
 #if UNITY_WEBGL && !UNITY_EDITOR
         ConnectWallet();
 #endif
     }
     
-    public void DisconnectWallet_Istance()
+    public void DisconnectWallet_Instance()
     {
 #if UNITY_WEBGL && !UNITY_EDITOR
         DisconnectWallet();
 #endif
     }
 
-	public void GetConnectedWalletAddress_Istance()
+	public void RequestWalletAddress_Instance()
     {
 #if UNITY_WEBGL && !UNITY_EDITOR
-		RequestConnectedWalletAddress();
+		RequestWalletAddress();
 #endif
     }
 
@@ -45,8 +45,8 @@ public class WalletConnector : MonoBehaviour
     public delegate void WalletDisconnectedAction();
     public static event WalletDisconnectedAction OnWalletDisconnected;
 
-    public delegate void ReturnConnectedWalletAddressAction(string addres);
-    public static event ReturnConnectedWalletAddressAction OnConnectedWalletAddressReturned;
+    public delegate void GetWalletAddressAction(string address);
+    public static event GetWalletAddressAction OnGetWalletAddress;
 
 
     public void InvokeOnWalletConnected(string address)
@@ -67,12 +67,12 @@ public class WalletConnector : MonoBehaviour
         }
     }
 
- 	public void InvokeReturnConnectedWalletAddress(string address)
+ 	public void ReturnWalletAddress(string address)
     {
-        Debug.Log("InvokeReturnConnectedWalletAddress. " + address);
-        if (OnConnectedWalletAddressReturned != null)
+        Debug.Log("ReturnWalletAddress. " + address);
+        if (OnGetWalletAddress != null)
         {
-            OnConnectedWalletAddressReturned(address);
+            OnGetWalletAddress(address);
         }
     }
 }
